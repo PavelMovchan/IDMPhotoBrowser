@@ -66,6 +66,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     UIView *_senderViewForAnimation;
 
     // Misc
+    BOOL _areControlsHidden;
     BOOL _performingLayout;
     BOOL _rotating;
     BOOL _viewIsActive; // active as in it's in the view heirarchy
@@ -185,6 +186,8 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
         _displayArrowButton = YES;
         _displayCounterLabel = NO;
 
+        _areControlsHidden = NO;
+        
         _forceHideStatusBar = NO;
         _usePopAnimation = NO;
         _disableVerticalSwipe = NO;
@@ -446,20 +449,19 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     [_applicationWindow addSubview:resizableImageView];
     _senderViewForAnimation.hidden = YES;
 
-
     void (^completion)() = ^() {
         self.view.alpha = 1.0f;
         _pagingScrollView.alpha = 1.0f;
-        [UIView animateWithDuration:0.2f animations:^{
-
+        [UIView animateWithDuration:_animationDuration animations:^{
             resizableImageView.backgroundColor = [UIColor clearColor];//[UIColor colorWithWhite:(_useWhiteBackgroundColor) ? 1 : 0 alpha:1];
             fadeView.alpha = 1.0f;
-            resizableImageView.alpha = 0.0f;
+            resizableImageView.alpha = 1.0f;
 
         } completion:^(BOOL finished) {
-//            [fadeView removeFromSuperview];
+            [self animateHeader];
+            [fadeView removeFromSuperview];
             [resizableImageView removeFromSuperview];
-
+            [self.view insertSubview:fadeView atIndex:0];
         }];
 
     };
@@ -469,7 +471,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
         float scaleFactor2 = finalImageViewFrame.size.height/screenHeight;
         finalImageViewFrame = CGRectMake((screenWidth-(finalImageViewFrame.size.width/scaleFactor2))/2, 0, finalImageViewFrame.size.width/scaleFactor2, screenHeight);
     }
-
+    
     if(_usePopAnimation)
     {
         [self animateView:resizableImageView toFrame:finalImageViewFrame completion:completion];
@@ -514,9 +516,11 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     resizableImageView.contentMode = UIViewContentModeScaleAspectFill;
     resizableImageView.backgroundColor = [UIColor clearColor];
     resizableImageView.clipsToBounds = YES;
+    [fadeView removeFromSuperview];
+    [_applicationWindow addSubview:fadeView];
     [_applicationWindow addSubview:resizableImageView];
     self.view.hidden = YES;
-
+    
     void (^completion)() = ^() {
         _senderViewForAnimation.hidden = NO;
         _senderViewForAnimation = nil;
@@ -529,10 +533,8 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
         [self dismissPhotoBrowserAnimated:NO];
     };
 
-    headerView.alpha = 0;
     [UIView animateWithDuration:_animationDuration animations:^{
         fadeView.alpha = 0;
-        headerView.alpha = 1;
         self.view.backgroundColor = [UIColor clearColor];
     } completion:nil];
 
@@ -640,8 +642,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     }
     [self.view addSubview:_pagingScrollView];
 
-    // Transition animation
-    [self performPresentAnimation];
+   
 
     UIInterfaceOrientation currentOrientation = [UIApplication sharedApplication].statusBarOrientation;
 
@@ -658,6 +659,9 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, _headerHeight)];
     [self.view addSubview:headerView];
     headerView.backgroundColor = [UIColor clearColor];
+    
+    // Transition animation
+       [self performPresentAnimation];
 
     UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleExtraLight];
     UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
@@ -728,14 +732,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     }
     _toolbar.alpha =headerView.alpha = _doneButton.alpha = _actionRightButton.alpha = self.navigationController.navigationBar.alpha = 0.0f;
     // Hide/show bars
-    [UIView animateWithDuration:0.5f animations:^(void) {
-        CGFloat alpha = 1.0f;
-        [self.navigationController.navigationBar setAlpha:alpha];
-        [_toolbar setAlpha:alpha];
-        [_actionRightButton setAlpha:alpha];
-        [_doneButton setAlpha:alpha];
-        [headerView setAlpha:alpha];
-    } completion:^(BOOL finished) {}];
+
     //_deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
     // [_deleteButton setFrame:[self frameForDoneButtonAtOrientation:currentOrientation]];
 
@@ -805,18 +802,22 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     // Status Bar
     _statusBarOriginallyHidden = [UIApplication sharedApplication].statusBarHidden;
 
-    _toolbar.alpha =headerView.alpha = _doneButton.alpha = _actionRightButton.alpha = self.navigationController.navigationBar.alpha = 0.0f;
-    [UIView animateWithDuration:0.1f animations:^(void) {
-        CGFloat alpha = 1.0f;
-        [self.navigationController.navigationBar setAlpha:alpha];
-        [_toolbar setAlpha:alpha];
-        [_doneButton setAlpha:alpha];
-        [headerView setAlpha:alpha];
-        [_actionRightButton setAlpha:alpha];
-    } completion:^(BOOL finished) {}];
+    
 
     // Update UI
     //[self hideControlsAfterDelay];
+}
+
+-(void)animateHeader {
+    _toolbar.alpha =headerView.alpha = _doneButton.alpha = _actionRightButton.alpha = self.navigationController.navigationBar.alpha = 0.0f;
+        [UIView animateWithDuration:_animationDuration animations:^(void) {
+            CGFloat alpha = 1.0f;
+            [self.navigationController.navigationBar setAlpha:alpha];
+            [_toolbar setAlpha:alpha];
+            [_doneButton setAlpha:alpha];
+            [headerView setAlpha:alpha];
+            [_actionRightButton setAlpha:alpha];
+        } completion:^(BOOL finished) {}];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -1011,7 +1012,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
         if(isLast)
         {
             _pagingScrollView.frame = CGRectMake(-_pagingScrollView.frame.size.width, _pagingScrollView.frame.origin.y, _pagingScrollView.frame.size.width, _pagingScrollView.frame.size.height);
-            [UIView animateWithDuration:0.2f animations:^{
+            [UIView animateWithDuration:_animationDuration animations:^{
                 _pagingScrollView.frame = origRect;
             } completion:^(BOOL finished) {
                 //complete
@@ -1020,7 +1021,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
         else
         {
             _pagingScrollView.frame = CGRectMake(_pagingScrollView.frame.size.width, _pagingScrollView.frame.origin.y, _pagingScrollView.frame.size.width, _pagingScrollView.frame.size.height);
-            [UIView animateWithDuration:0.2f animations:^{
+            [UIView animateWithDuration:_animationDuration animations:^{
                 _pagingScrollView.frame = origRect;
             } completion:^(BOOL finished) {
                 //complete
@@ -1413,7 +1414,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 - (void)setControlsHidden:(BOOL)hidden animated:(BOOL)animated permanent:(BOOL)permanent {
     // Cancel any timers
     [self cancelControlHiding];
-
+    _areControlsHidden = hidden;
     // Captions
     NSMutableSet *captionViews = [[NSMutableSet alloc] initWithCapacity:_visiblePages.count];
     for (IDMZoomingScrollView *page in _visiblePages) {
@@ -1421,14 +1422,14 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     }
 
     // Hide/show bars
-    [UIView animateWithDuration:(animated ? 0.1 : 0) animations:^(void) {
+    [UIView animateWithDuration:(animated ? _animationDuration : 0) animations:^(void) {
         CGFloat alpha = hidden ? 0 : 1;
         [self.navigationController.navigationBar setAlpha:alpha];
         [_toolbar setAlpha:alpha];
         [_doneButton setAlpha:alpha];
         [headerView setAlpha:alpha];
         [_actionRightButton setAlpha:alpha];
-        self.view.backgroundColor = hidden ? [UIColor blackColor] :  [UIColor colorWithPatternImage:bgImage];
+//        self.view.backgroundColor = hidden ? [UIColor blackColor] :  [UIColor colorWithPatternImage:bgImage];
         for (UIView *v in captionViews) v.alpha = alpha;
     } completion:^(BOOL finished) {}];
 
@@ -1457,7 +1458,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     }
 }
 
-- (BOOL)areControlsHidden { return (_toolbar.alpha == 0); }
+- (BOOL)areControlsHidden { return _areControlsHidden; }
 - (void)hideControls      { if(_autoHide) [self setControlsHidden:YES animated:YES permanent:NO]; }
 - (void)toggleControls    { [self setControlsHidden:![self areControlsHidden] animated:YES permanent:NO]; }
 
@@ -1504,7 +1505,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 
 -(void)deletePhoto
 {
-    [UIView animateWithDuration:0.2f animations:^{
+    [UIView animateWithDuration:_animationDuration animations:^{
         IDMZoomingScrollView*page = [self pageDisplayedAtIndex:_currentPageIndex];
         page.transform = CGAffineTransformMakeScale(0.1f, 0.1f);
         page.alpha = 0.1f;
