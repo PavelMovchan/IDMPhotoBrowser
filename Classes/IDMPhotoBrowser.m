@@ -509,11 +509,6 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 
     float scaleFactor = imageFromView.size.width / screenWidth;
 
-//    UIView *fadeView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, screenWidth, screenHeight)];
-//    fadeView.backgroundColor = [UIColor colorWithPatternImage:bgImage];// self.useWhiteBackgroundColor ? [UIColor whiteColor] : [UIColor blackColor];
-//    fadeView.alpha = fadeAlpha;
-//    [_applicationWindow addSubview:fadeView];
-
     UIImageView *resizableImageView = [[UIImageView alloc] initWithImage:imageFromView];
     resizableImageView.frame = (imageFromView) ? CGRectMake(0, (screenHeight/2)-((imageFromView.size.height / scaleFactor)/2)+scrollView.frame.origin.y, screenWidth, imageFromView.size.height / scaleFactor) : CGRectZero;
     resizableImageView.contentMode = UIViewContentModeScaleAspectFill;
@@ -960,17 +955,17 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 
     // Toolbar
     if (_displayToolbar) {
-        [_applicationWindow addSubview:_toolbar];
+        [self.view addSubview:_toolbar];
     } else {
         [_toolbar removeFromSuperview];
     }
 
     // Close button
     if(_displayDoneButton && !self.navigationController.navigationBar)
-        [_applicationWindow addSubview:_doneButton];
+        [self.view addSubview:_doneButton];
 
     if(_displayActionRightButton && !self.navigationController.navigationBar)
-        [_applicationWindow addSubview:_actionRightButton];
+        [self.view addSubview:_actionRightButton];
 
     // Toolbar items & navigation
     UIBarButtonItem *fixedLeftSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFixedSpace
