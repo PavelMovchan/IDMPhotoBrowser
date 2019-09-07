@@ -26,6 +26,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     NSMutableArray *_photos;
     UIImage* bgImage;
     // Views
+    UIView *fadeView;
     UIScrollView *_pagingScrollView;
     UIPopoverPresentationController *alertPopoverPresentationController;
     UIView*headerView;
@@ -274,7 +275,6 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 -(void)setBgImage:(UIImage *)bgImage1
 {
     bgImage = bgImage1;
-    //self.view.backgroundColor = [UIColor colorWithPatternImage:bgImage];
 }
 
 - (void)releaseAllUnderlyingPhotos {
@@ -325,7 +325,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 
     self.view.opaque = YES;
 
-    self.view.backgroundColor = [UIColor colorWithPatternImage:bgImage];//[UIColor colorWithWhite:(_useWhiteBackgroundColor ? 1 : 0) alpha:newAlpha];
+    self.view.backgroundColor = [UIColor clearColor];//[UIColor colorWithWhite:(_useWhiteBackgroundColor ? 1 : 0) alpha:newAlpha];
 
     // Gesture Ended
     if ([(UIPanGestureRecognizer*)sender state] == UIGestureRecognizerStateEnded) {
@@ -372,7 +372,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
             [UIView setAnimationCurve:UIViewAnimationCurveEaseIn];
             [UIView setAnimationDelegate:self];
             [scrollView setCenter:CGPointMake(finalX, finalY)];
-            self.view.backgroundColor =  [UIColor colorWithWhite:1 alpha:0];
+            self.view.backgroundColor = [UIColor clearColor];
             [UIView commitAnimations];
 
             [self performSelector:@selector(doneButtonPressed:) withObject:self afterDelay:animationDuration];
@@ -382,7 +382,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
             _isdraggingPhoto = NO;
             [self setNeedsStatusBarAppearanceUpdate];
 
-            self.view.backgroundColor = [UIColor colorWithPatternImage:bgImage];;//[UIColor colorWithWhite:(_useWhiteBackgroundColor ? 1 : 0) alpha:1];
+            self.view.backgroundColor =[UIColor clearColor];//self.view.backgroundColor = [UIColor colorWithPatternImage:bgImage];;//[UIColor colorWithWhite:(_useWhiteBackgroundColor ? 1 : 0) alpha:1];
 
             CGFloat velocityY = (.35*[(UIPanGestureRecognizer*)sender velocityInView:self.view].y);
 
@@ -433,15 +433,16 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     CGFloat screenWidth = screenBound.size.width;
     CGFloat screenHeight = screenBound.size.height;
 
-    UIView *fadeView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, screenWidth, screenHeight)];
-    fadeView.backgroundColor = [UIColor clearColor];
+    fadeView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, screenWidth, screenHeight)];
+    fadeView.alpha = 0.0f;
+    fadeView.backgroundColor = [UIColor colorWithPatternImage:bgImage];
     [_applicationWindow addSubview:fadeView];
 
     UIImageView *resizableImageView = [[UIImageView alloc] initWithImage:imageFromView];
     resizableImageView.frame = _senderViewOriginalFrame;
     resizableImageView.clipsToBounds = YES;
     resizableImageView.contentMode = UIViewContentModeScaleAspectFill;
-    resizableImageView.backgroundColor = [UIColor colorWithPatternImage:bgImage];// [UIColor colorWithWhite:(_useWhiteBackgroundColor) ? 1 : 0 alpha:1];
+    resizableImageView.backgroundColor = [UIColor clearColor];// [UIColor colorWithWhite:(_useWhiteBackgroundColor) ? 1 : 0 alpha:1];
     [_applicationWindow addSubview:resizableImageView];
     _senderViewForAnimation.hidden = YES;
 
@@ -451,22 +452,17 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
         _pagingScrollView.alpha = 1.0f;
         [UIView animateWithDuration:0.2f animations:^{
 
-            resizableImageView.backgroundColor = [UIColor colorWithPatternImage:bgImage];//[UIColor colorWithWhite:(_useWhiteBackgroundColor) ? 1 : 0 alpha:1];
-            fadeView.alpha = 0.0f;
+            resizableImageView.backgroundColor = [UIColor clearColor];//[UIColor colorWithWhite:(_useWhiteBackgroundColor) ? 1 : 0 alpha:1];
+            fadeView.alpha = 1.0f;
             resizableImageView.alpha = 0.0f;
 
         } completion:^(BOOL finished) {
-            [fadeView removeFromSuperview];
+//            [fadeView removeFromSuperview];
             [resizableImageView removeFromSuperview];
 
         }];
 
     };
-
-    /* [UIView animateWithDuration:_animationDuration animations:^{
-     fadeView.backgroundColor = self.useWhiteBackgroundColor ? [UIColor whiteColor] : [UIColor blackColor];
-     } completion:nil];*/
-
     float scaleFactor = (imageFromView ? imageFromView.size.width : screenWidth) / screenWidth;
     CGRect finalImageViewFrame = CGRectMake(0, (screenHeight/2)-((imageFromView.size.height / scaleFactor)/2), screenWidth, imageFromView.size.height / scaleFactor);
     if (finalImageViewFrame.size.height>screenHeight) {
@@ -481,6 +477,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     else
     {
         [UIView animateWithDuration:(_animationDuration+0.15f) animations:^{
+            fadeView.alpha = 1.0f;
             resizableImageView.layer.frame = finalImageViewFrame;
         } completion:^(BOOL finished) {
             completion();
@@ -512,10 +509,10 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 
     float scaleFactor = imageFromView.size.width / screenWidth;
 
-    UIView *fadeView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, screenWidth, screenHeight)];
-    fadeView.backgroundColor =  [UIColor colorWithPatternImage:bgImage];// self.useWhiteBackgroundColor ? [UIColor whiteColor] : [UIColor blackColor];
-    fadeView.alpha = fadeAlpha;
-    [_applicationWindow addSubview:fadeView];
+//    UIView *fadeView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, screenWidth, screenHeight)];
+//    fadeView.backgroundColor = [UIColor colorWithPatternImage:bgImage];// self.useWhiteBackgroundColor ? [UIColor whiteColor] : [UIColor blackColor];
+//    fadeView.alpha = fadeAlpha;
+//    [_applicationWindow addSubview:fadeView];
 
     UIImageView *resizableImageView = [[UIImageView alloc] initWithImage:imageFromView];
     resizableImageView.frame = (imageFromView) ? CGRectMake(0, (screenHeight/2)-((imageFromView.size.height / scaleFactor)/2)+scrollView.frame.origin.y, screenWidth, imageFromView.size.height / scaleFactor) : CGRectZero;
@@ -537,8 +534,10 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
         [self dismissPhotoBrowserAnimated:NO];
     };
 
+    headerView.alpha = 0;
     [UIView animateWithDuration:_animationDuration animations:^{
         fadeView.alpha = 0;
+        headerView.alpha = 1;
         self.view.backgroundColor = [UIColor clearColor];
     } completion:nil];
 
@@ -625,7 +624,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 
 - (void)viewDidLoad {
     // View
-    self.view.backgroundColor = [UIColor colorWithPatternImage:bgImage];//[UIColor colorWithWhite:(_useWhiteBackgroundColor ? 1 : 0) alpha:1];
+    self.view.backgroundColor = [UIColor clearColor];//[UIColor colorWithWhite:(_useWhiteBackgroundColor ? 1 : 0) alpha:1];
 
     self.view.clipsToBounds = YES;
 
@@ -662,7 +661,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 
 
     headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, _headerHeight)];
-    [_applicationWindow addSubview:headerView];
+    [self.view addSubview:headerView];
     headerView.backgroundColor = [UIColor clearColor];
 
     UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleExtraLight];
@@ -769,12 +768,10 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     // Counter Label
     UIView*clView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 95, 44)];
     _counterLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, _statusBarHeight/2, 95, 44)];
-    //clView.backgroundColor = [UIColor greenColor];
     _counterLabel.textAlignment = NSTextAlignmentCenter;
     _counterLabel.backgroundColor = [UIColor clearColor];
     _counterLabel.font = [UIFont fontWithName:@"PTSans-Bold" size:17];
     _counterLabel.textColor = [UIColor colorWithRed:51.000000/255.0f green:51.000000/255.0f blue:51.000000/255.0f alpha:1.000000];
-    // _counterLabel.backgroundColor = [UIColor redColor];
     // Counter Button
     [clView addSubview:_counterLabel];
     _counterButton = [[UIBarButtonItem alloc] initWithCustomView:clView];
@@ -861,8 +858,13 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 
 #pragma mark - Status Bar
 
-- (UIStatusBarStyle)preferredStatusBarStyle {
-    return UIStatusBarStyleDefault;
+-(UIStatusBarStyle)preferredStatusBarStyle
+{
+    if (@available(iOS 13.0, *)) {
+        return UIStatusBarStyleDarkContent;
+    } else {
+        return UIStatusBarStyleDefault;
+    }
 }
 
 - (BOOL)prefersStatusBarHidden {
@@ -962,11 +964,6 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     } else {
         [_toolbar removeFromSuperview];
     }
-
-    //UIWindow* statusBarWindow = (UIWindow *)[[UIApplication sharedApplication] valueForKey:@"statusBarWindow"];
-    //statusBarWindow.frame = _rectStatusBar;
-
-
 
     // Close button
     if(_displayDoneButton && !self.navigationController.navigationBar)
