@@ -30,6 +30,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     UIScrollView *_pagingScrollView;
     UIPopoverPresentationController *alertPopoverPresentationController;
     UIView*headerView;
+//    UIView*headerViewContainer;
     //RNGridMenu*gridMenu;
 
     // Gesture
@@ -385,7 +386,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
             _isdraggingPhoto = NO;
             [self setNeedsStatusBarAppearanceUpdate];
 
-            self.view.backgroundColor =[UIColor clearColor];//self.view.backgroundColor = [UIColor colorWithPatternImage:bgImage];;//[UIColor colorWithWhite:(_useWhiteBackgroundColor ? 1 : 0) alpha:1];
+            self.view.backgroundColor =[UIColor clearColor];
 
             CGFloat velocityY = (.35*[(UIPanGestureRecognizer*)sender velocityInView:self.view].y);
 
@@ -408,17 +409,6 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 
 - (UIImage*)rotateImageToCurrentOrientation:(UIImage*)image
 {
-    /* if(UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation))
-     {
-     UIImageOrientation orientation = ([UIApplication sharedApplication].statusBarOrientation == UIInterfaceOrientationLandscapeLeft) ?UIImageOrientationLeft : UIImageOrientationRight;
-
-     UIImage *rotatedImage = [[UIImage alloc] initWithCGImage:image.CGImage
-     scale:1.0
-     orientation:orientation];
-
-     image = rotatedImage;
-     }*/
-
     return image;
 }
 
@@ -445,20 +435,20 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     resizableImageView.frame = _senderViewOriginalFrame;
     resizableImageView.clipsToBounds = YES;
     resizableImageView.contentMode = UIViewContentModeScaleAspectFill;
-    resizableImageView.backgroundColor = [UIColor clearColor];// [UIColor colorWithWhite:(_useWhiteBackgroundColor) ? 1 : 0 alpha:1];
+    resizableImageView.backgroundColor = [UIColor clearColor];
     [_applicationWindow addSubview:resizableImageView];
     _senderViewForAnimation.hidden = YES;
-
+    [self animateHeader];
     void (^completion)() = ^() {
         self.view.alpha = 1.0f;
         _pagingScrollView.alpha = 1.0f;
         [UIView animateWithDuration:_animationDuration animations:^{
-            resizableImageView.backgroundColor = [UIColor clearColor];//[UIColor colorWithWhite:(_useWhiteBackgroundColor) ? 1 : 0 alpha:1];
+            resizableImageView.backgroundColor = [UIColor clearColor];
             fadeView.alpha = 1.0f;
             resizableImageView.alpha = 1.0f;
 
         } completion:^(BOOL finished) {
-            [self animateHeader];
+            
             [fadeView removeFromSuperview];
             [resizableImageView removeFromSuperview];
             [self.view insertSubview:fadeView atIndex:0];
@@ -621,14 +611,13 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 
 - (void)viewDidLoad {
     // View
-    self.view.backgroundColor = [UIColor clearColor];//[UIColor colorWithWhite:(_useWhiteBackgroundColor ? 1 : 0) alpha:1];
+    self.view.backgroundColor = [UIColor clearColor];
 
     self.view.clipsToBounds = YES;
 
     // Setup paging scrolling view
     CGRect pagingScrollViewFrame = [self frameForPagingScrollView];
     _pagingScrollView = [[UIScrollView alloc] initWithFrame:pagingScrollViewFrame];
-    //_pagingScrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     _pagingScrollView.pagingEnabled = YES;
     _pagingScrollView.delegate = self;
     _pagingScrollView.showsHorizontalScrollIndicator = NO;
@@ -661,7 +650,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     headerView.backgroundColor = [UIColor clearColor];
     
     // Transition animation
-       [self performPresentAnimation];
+    [self performPresentAnimation];
 
     UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleExtraLight];
     UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
@@ -678,14 +667,9 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     [_actionRightButton addTarget:self action:@selector(rightActionButtonPressed:) forControlEvents:UIControlEventTouchUpInside];
 
     if(!_actionRightButtonImage) {
-        // [_actionRightButton setTitleColor:[UIColor colorWithWhite:0.9 alpha:0.9] forState:UIControlStateNormal|UIControlStateHighlighted];
-        //[_actionRightButton setTitle:IDMPhotoBrowserLocalizedStrings(@"...") forState:UIControlStateNormal];
         [_actionRightButton.titleLabel setFont:[UIFont boldSystemFontOfSize:11.0f]];
         [_actionRightButton setBackgroundColor:[UIColor clearColor]];
-        //_actionRightButton.layer.cornerRadius = 3.0f;
-        // _actionRightButton.layer.borderColor = [UIColor colorWithWhite:0.9 alpha:0.9].CGColor;
-        // _actionRightButton.layer.borderWidth = 1.0f;
-        float topMarginDots = 19.0f;
+        float topMarginDots = _actionRightButton.frame.size.height/2 - 2;
         float dDot = 5.0f;
         CAShapeLayer *circleLayer = [CAShapeLayer layer];
         [circleLayer setPath:[[UIBezierPath bezierPathWithOvalInRect:CGRectMake(5, topMarginDots, dDot, dDot)] CGPath]];
@@ -705,11 +689,8 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     }
     else {
         [_actionRightButton setImage:_actionRightButtonImage forState:UIControlStateNormal];
-        //[_actionRightButton setImageEdgeInsets:UIEdgeInsetsMake(10, 10, 10, 10)];
         _actionRightButton.contentMode = UIViewContentModeScaleAspectFill;
     }
-
-
     // Close Button
     _doneButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [_doneButton setFrame:[self frameForDoneButtonAtOrientation:currentOrientation]];
@@ -727,14 +708,9 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     }
     else {
         [_doneButton setImage:_doneButtonImage forState:UIControlStateNormal];
-        //[_doneButton setImageEdgeInsets:UIEdgeInsetsMake(10, 10, 10, 10)];
         _doneButton.contentMode = UIViewContentModeScaleAspectFill;
     }
-    _toolbar.alpha =headerView.alpha = _doneButton.alpha = _actionRightButton.alpha = self.navigationController.navigationBar.alpha = 0.0f;
-    // Hide/show bars
-
-    //_deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    // [_deleteButton setFrame:[self frameForDoneButtonAtOrientation:currentOrientation]];
+    _toolbar.alpha =headerView.alpha = _doneButton.alpha = _actionRightButton.alpha = self.navigationController.navigationBar.alpha = 1.0f;
 
     UIImage *leftButtonImage = (_leftArrowImage == nil) ?
     [UIImage imageNamed:@"IDMPhotoBrowser.bundle/images/IDMPhotoBrowser_arrowLeft.png"]          : _leftArrowImage;
@@ -748,7 +724,6 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     UIImage *rightButtonSelectedImage = (_rightArrowSelectedImage == nil) ?
     [UIImage imageNamed:@"IDMPhotoBrowser.bundle/images/IDMPhotoBrowser_arrowRightSelected.png"] : _rightArrowSelectedImage;
 
-    // Arrows
     _previousButton = [[UIBarButtonItem alloc] initWithCustomView:[self customToolbarButtonImage:leftButtonImage
                                                                                    imageSelected:leftButtonSelectedImage
                                                                                           action:@selector(gotoPreviousPage)]];
